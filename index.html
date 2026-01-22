@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- 🔒 Security headers -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'">
+
+  <title>Reset Password</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      max-width: 350px;
+      margin: 100px auto;
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Reset Password</h2>
+
+  <input type="password" id="password" placeholder="New password" />
+  <button onclick="resetPassword()">Update Password</button>
+
+  <p id="msg"></p>
+
+  <script>
+    // 🔥 THAY 2 GIÁ TRỊ NÀY
+    const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+    const SUPABASE_ANON = "YOUR_PUBLIC_ANON_KEY";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    async function resetPassword() {
+      const pass = document.getElementById("password").value;
+      const msg = document.getElementById("msg");
+
+      if (pass.length < 6) {
+        msg.innerText = "Password must be at least 6 characters";
+        return;
+      }
+
+      msg.innerText = "Updating...";
+
+      const { error } = await supabase.auth.updateUser({
+        password: pass
+      });
+
+      if (error) {
+        msg.innerText = error.message;
+      } else {
+        msg.innerText = "✅ Password updated! You can close this page.";
+
+        // auto close after 3s
+        setTimeout(() => window.close(), 3000);
+      }
+    }
+  </script>
+
+</body>
+</html>

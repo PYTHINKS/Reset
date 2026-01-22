@@ -41,37 +41,59 @@
   <p id="msg"></p>
 
   <script>
-    // 🔥 THAY 2 GIÁ TRỊ NÀY
-    const SUPABASE_URL = "https://tvbkcbplgtedtdomankn.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2YmtjYnBsZ3RlZHRkb21hbmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MTI2NDEsImV4cCI6MjA4NDE4ODY0MX0.NF0UTFWl2sitNxcyEDQj3aUY2J0LkT0CVFyPldpWLrg";
+  const SUPABASE_URL = "https://tvbkcbplgtedtdomankn.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2YmtjYnBsZ3RlZHRkb21hbmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MTI2NDEsImV4cCI6MjA4NDE4ODY0MX0.NF0UTFWl2sitNxcyEDQj3aUY2J0LkT0CVFyPldpWLrg";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    async function resetPassword() {
-      const pass = document.getElementById("password").value;
-      const msg = document.getElementById("msg");
+  const msg = document.getElementById("msg");
 
-      if (pass.length < 6) {
-        msg.innerText = "Password must be at least 6 characters";
-        return;
-      }
+  // 🔥 BƯỚC QUAN TRỌNG: đọc token từ URL hash
+  async function initSession() {
+    const hash = window.location.hash;
 
-      msg.innerText = "Updating...";
-
-      const { error } = await supabase.auth.updateUser({
-        password: pass
-      });
-
-      if (error) {
-        msg.innerText = error.message;
-      } else {
-        msg.innerText = "✅ Password updated! You can close this page.";
-
-        // auto close after 3s
-        setTimeout(() => window.close(), 3000);
-      }
+    if (!hash) {
+      msg.innerText = "Invalid or expired link.";
+      return;
     }
-  </script>
+
+    const params = new URLSearchParams(hash.substring(1));
+
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+
+    if (!access_token) {
+      msg.innerText = "Token not found.";
+      return;
+    }
+
+    await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+  }
+
+  initSession();
+
+  // 🔥 reset password
+  async function resetPassword() {
+    const pass = document.getElementById("password").value;
+
+    msg.innerText = "Updating...";
+
+    const { error } = await supabase.auth.updateUser({
+      password: pass
+    });
+
+    if (error) {
+      msg.innerText = error.message;
+    } else {
+      msg.innerText = "✅ Password updated successfully!";
+      setTimeout(() => window.close(), 3000);
+    }
+  }
+</script>
+
 
 </body>
 </html>

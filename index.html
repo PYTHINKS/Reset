@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -98,102 +99,112 @@
             min-height: 1.2em;
         }
 
-        .error { color: var(--error-color); }
-        .success { color: var(--success-color); }
+        .error {
+            color: var(--error-color);
+        }
 
-        .hidden { display: none; }
+        .success {
+            color: var(--success-color);
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h2>Đặt lại mật khẩu</h2>
-    
-    <div id="loading" class="message">Đang kiểm tra token...</div>
-    
-    <form id="resetForm" class="hidden">
-        <div class="form-group">
-            <label for="password">Mật khẩu mới</label>
-            <input type="password" id="password" required placeholder="Nhập mật khẩu mới...">
-        </div>
-        <button type="submit" id="submitBtn">Cập nhật mật khẩu</button>
-    </form>
+    <div class="container">
+        <h2>Đặt lại mật khẩu</h2>
 
-    <div id="message" class="message"></div>
-</div>
+        <div id="loading" class="message">Đang kiểm tra token...</div>
 
-<script>
-    // --- CẤU HÌNH CỦA BẠN ---
-    // Thay thế bằng URL và Key thực tế từ Supabase Dashboard
-    const SUPABASE_URL = "https://tvbkcbplgtedtdomankn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2YmtjYnBsZ3RlZHRkb21hbmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MTI2NDEsImV4cCI6MjA4NDE4ODY0MX0.NF0UTFWl2sitNxcyEDQj3aUY2J0LkT0CVFyPldpWLrg";
-    // ------------------------
+        <form id="resetForm" class="hidden">
+            <div class="form-group">
+                <label for="password">Mật khẩu mới</label>
+                <input type="password" id="password" required placeholder="Nhập mật khẩu mới...">
+            </div>
+            <button type="submit" id="submitBtn">Cập nhật mật khẩu</button>
+        </form>
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    const resetForm = document.getElementById('resetForm');
-    const loadingDiv = document.getElementById('loading');
-    const messageDiv = document.getElementById('message');
-    const submitBtn = document.getElementById('submitBtn');
+        <div id="message" class="message"></div>
+    </div>
 
-    // Supabase gửi token qua URL hash (fragment)
-    // Ví dụ: https://site.com/reset#access_token=...&refresh_token=...&type=recovery
-    
-    async function checkSession() {
-        // Lấy session từ URL hash
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error || !data.session) {
-            loadingDiv.classList.add('hidden');
-            // Kiểm tra hash thủ công nếu getSession chưa bắt kịp (đôi khi xảy ra)
-            if (window.location.hash.includes('type=recovery')) {
-                 loadingDiv.classList.add('hidden');
-                 resetForm.classList.remove('hidden');
-                 return;
+    <script>
+        // --- CẤU HÌNH CỦA BẠN ---
+        const SUPABASE_URL = "https://tvbkcbplgtedtdomankn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2YmtjYnBsZ3RlZHRkb21hbmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MTI2NDEsImV4cCI6MjA4NDE4ODY0MX0.NF0UTFWl2sitNxcyEDQj3aUY2J0LkT0CVFyPldpWLrg";
+        // ------------------------
+
+        // ĐÃ SỬA: Đổi tên biến thành supabaseClient để tránh xung đột
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const resetForm = document.getElementById('resetForm');
+        const loadingDiv = document.getElementById('loading');
+        const messageDiv = document.getElementById('message');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Supabase gửi token qua URL hash (fragment)
+        // Ví dụ: https://site.com/reset#access_token=...&refresh_token=...&type=recovery
+
+        async function checkSession() {
+            // Lấy session từ URL hash
+            const { data, error } = await supabaseClient.auth.getSession();
+
+            if (error || !data.session) {
+                loadingDiv.classList.add('hidden');
+                // Kiểm tra hash thủ công nếu getSession chưa bắt kịp (đôi khi xảy ra)
+                if (window.location.hash.includes('type=recovery')) {
+                    loadingDiv.classList.add('hidden');
+                    resetForm.classList.remove('hidden');
+                    return;
+                }
+
+                messageDiv.textContent = "Liên kết không hợp lệ hoặc đã hết hạn.";
+                messageDiv.classList.add('error');
+            } else {
+                loadingDiv.classList.add('hidden');
+                resetForm.classList.remove('hidden');
+                console.log("Session valid, user:", data.session.user);
+            }
+        }
+
+        // Xử lý sự kiện submit
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+
+            if (password.length < 6) {
+                messageDiv.textContent = "Mật khẩu phải có ít nhất 6 ký tự.";
+                messageDiv.classList.add('error');
+                return;
             }
 
-            messageDiv.textContent = "Liên kết không hợp lệ hoặc đã hết hạn.";
-            messageDiv.classList.add('error');
-        } else {
-            loadingDiv.classList.add('hidden');
-            resetForm.classList.remove('hidden');
-            console.log("Session valid, user:", data.session.user);
-        }
-    }
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Đang xử lý...";
+            messageDiv.textContent = "";
 
-    // Xử lý sự kiện submit
-    resetForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const password = document.getElementById('password').value;
+            // Cập nhật mật khẩu
+            const { data, error } = await supabaseClient.auth.updateUser({ password: password });
 
-        if (password.length < 6) {
-            messageDiv.textContent = "Mật khẩu phải có ít nhất 6 ký tự.";
-            messageDiv.classList.add('error');
-            return;
-        }
+            if (error) {
+                messageDiv.textContent = "Lỗi: " + error.message;
+                messageDiv.classList.add('error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Cập nhật mật khẩu";
+            } else {
+                messageDiv.textContent = "Đổi mật khẩu thành công! Bạn có thể đóng tab này.";
+                messageDiv.classList.add('success');
+                resetForm.classList.add('hidden');
+            }
+        });
 
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Đang xử lý...";
-        messageDiv.textContent = "";
-
-        // Cập nhật mật khẩu
-        const { data, error } = await supabase.auth.updateUser({ password: password });
-
-        if (error) {
-            messageDiv.textContent = "Lỗi: " + error.message;
-            messageDiv.classList.add('error');
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Cập nhật mật khẩu";
-        } else {
-            messageDiv.textContent = "Đổi mật khẩu thành công! Bạn có thể đóng tab này.";
-            messageDiv.classList.add('success');
-            resetForm.classList.add('hidden');
-        }
-    });
-
-    // Chạy kiểm tra khi trang tải xong
-    checkSession();
-</script>
+        // Chạy kiểm tra khi trang tải xong
+        checkSession();
+    </script>
 
 </body>
+
 </html>

@@ -1,99 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --input-bg: #2d2d2d;
+            --input-border: #444;
+            --primary-color: #007acc;
+            --primary-hover: #0098ff;
+            --error-color: #ff4d4d;
+            --success-color: #4caf50;
+        }
 
-  <!-- 🔒 Security headers -->
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'">
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-  <title>Reset Password</title>
+        .container {
+            background-color: #252526;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
 
-  <style>
-    body {
-      font-family: Arial;
-      max-width: 350px;
-      margin: 100px auto;
-      text-align: center;
-    }
+        .form-group {
+            margin-bottom: 1rem;
+        }
 
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-    }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
 
-    button {
-      cursor: pointer;
-    }
-  </style>
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #444;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            min-height: 1.2em;
+        }
+
+        .error { color: var(--error-color); }
+        .success { color: var(--success-color); }
+
+        .hidden { display: none; }
+    </style>
 </head>
-
 <body>
 
-  <h2>Reset Password</h2>
+<div class="container">
+    <h2>Đặt lại mật khẩu</h2>
+    
+    <div id="loading" class="message">Đang kiểm tra token...</div>
+    
+    <form id="resetForm" class="hidden">
+        <div class="form-group">
+            <label for="password">Mật khẩu mới</label>
+            <input type="password" id="password" required placeholder="Nhập mật khẩu mới...">
+        </div>
+        <button type="submit" id="submitBtn">Cập nhật mật khẩu</button>
+    </form>
 
-  <input type="password" id="password" placeholder="New password" />
-  <button onclick="resetPassword()">Update Password</button>
+    <div id="message" class="message"></div>
+</div>
 
-  <p id="msg"></p>
+<script>
+    // --- CẤU HÌNH CỦA BẠN ---
+    // Thay thế bằng URL và Key thực tế từ Supabase Dashboard
+    const SUPABASE_URL = 'https://tvbkcbplgtedtdomankn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2YmtjYnBsZ3RlZHRkb21hbmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MTI2NDEsImV4cCI6MjA4NDE4ODY0MX0.NF0UTFWl2sitNxcyEDQj3aUY2J0LkT0CVFyPldpWLrg';
+    // ------------------------
 
-  <script>
-  const SUPABASE_URL = "https://tvbkcbplgtedtdomankn.supabase.co";
-  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2YmtjYnBsZ3RlZHRkb21hbmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MTI2NDEsImV4cCI6MjA4NDE4ODY0MX0.NF0UTFWl2sitNxcyEDQj3aUY2J0LkT0CVFyPldpWLrg";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const resetForm = document.getElementById('resetForm');
+    const loadingDiv = document.getElementById('loading');
+    const messageDiv = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    // Supabase gửi token qua URL hash (fragment)
+    // Ví dụ: https://site.com/reset#access_token=...&refresh_token=...&type=recovery
+    
+    async function checkSession() {
+        // Lấy session từ URL hash
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error || !data.session) {
+            loadingDiv.classList.add('hidden');
+            // Kiểm tra hash thủ công nếu getSession chưa bắt kịp (đôi khi xảy ra)
+            if (window.location.hash.includes('type=recovery')) {
+                 loadingDiv.classList.add('hidden');
+                 resetForm.classList.remove('hidden');
+                 return;
+            }
 
-  const msg = document.getElementById("msg");
-
-  // 🔥 BƯỚC QUAN TRỌNG: đọc token từ URL hash
-  async function initSession() {
-    const hash = window.location.hash;
-
-    if (!hash) {
-      msg.innerText = "Invalid or expired link.";
-      return;
+            messageDiv.textContent = "Liên kết không hợp lệ hoặc đã hết hạn.";
+            messageDiv.classList.add('error');
+        } else {
+            loadingDiv.classList.add('hidden');
+            resetForm.classList.remove('hidden');
+            console.log("Session valid, user:", data.session.user);
+        }
     }
 
-    const params = new URLSearchParams(hash.substring(1));
+    // Xử lý sự kiện submit
+    resetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = document.getElementById('password').value;
 
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
+        if (password.length < 6) {
+            messageDiv.textContent = "Mật khẩu phải có ít nhất 6 ký tự.";
+            messageDiv.classList.add('error');
+            return;
+        }
 
-    if (!access_token) {
-      msg.innerText = "Token not found.";
-      return;
-    }
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Đang xử lý...";
+        messageDiv.textContent = "";
 
-    await supabase.auth.setSession({
-      access_token,
-      refresh_token
+        // Cập nhật mật khẩu
+        const { data, error } = await supabase.auth.updateUser({ password: password });
+
+        if (error) {
+            messageDiv.textContent = "Lỗi: " + error.message;
+            messageDiv.classList.add('error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Cập nhật mật khẩu";
+        } else {
+            messageDiv.textContent = "Đổi mật khẩu thành công! Bạn có thể đóng tab này.";
+            messageDiv.classList.add('success');
+            resetForm.classList.add('hidden');
+        }
     });
-  }
 
-  initSession();
-
-  // 🔥 reset password
-  async function resetPassword() {
-    const pass = document.getElementById("password").value;
-
-    msg.innerText = "Updating...";
-
-    const { error } = await supabase.auth.updateUser({
-      password: pass
-    });
-
-    if (error) {
-      msg.innerText = error.message;
-    } else {
-      msg.innerText = "✅ Password updated successfully!";
-      setTimeout(() => window.close(), 3000);
-    }
-  }
+    // Chạy kiểm tra khi trang tải xong
+    checkSession();
 </script>
-
 
 </body>
 </html>
